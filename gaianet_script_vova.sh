@@ -615,3 +615,4 @@ fi
 sleep 5
 chmod +x "$BOT_FILE"
 screen -dmS "$SCREEN_NAME" bash -c "cd $INSTANCE_FOLDER && source venv/bin/activate && python3 bot.py $THREADS_AMOUNT"
+exit 0 
