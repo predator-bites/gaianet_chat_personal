@@ -16,6 +16,7 @@ INSTANCE_NUM=$4
 # Define folder name for the instance
 INSTANCE_FOLDER="gaianet_instance_${INSTANCE_NUM}"
 
+sudo apt install apt-utils
 
 # Kill any existing screen session named "gaianet_script"
 echo "Checking for existing folders with 'gaianet_chat_by_dp'..."
