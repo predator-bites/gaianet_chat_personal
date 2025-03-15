@@ -18,24 +18,14 @@ INSTANCE_FOLDER="gaianet_instance_${INSTANCE_NUM}"
 
 sudo apt install apt-utils
 
-cleanup_gaianet_folders() {
-    echo "Checking for folders matching 'gaianet_instance_*'..."
-    
-    # Check if any folders exist
-    if ls gaianet_instance_* >/dev/null 2>&1; then
+
+if ls gaianet_instance_* >/dev/null 2>&1; then
         echo "Found gaianet_instance folders. Deleting..."
-        # Use find to locate and delete all matching folders
         find . -maxdepth 1 -type d -name "gaianet_instance_*" -exec rm -rf {} + 2>/dev/null
-        if [ $? -eq 0 ]; then
-            echo "Successfully deleted all gaianet_instance folders."
-        else
-            echo "Warning: Some folders may not have been deleted."
-        fi
+        [ $? -eq 0 ] && echo "Successfully deleted all gaianet_instance folders." || echo "Warning: Some folders may not have been deleted."
     else
         echo "No gaianet_instance folders found."
     fi
-}
-cleanup_gaianet_folders
 # Kill any existing screen session named "gaianet_script"
 echo "Checking for existing folders with 'gaianet_chat_by_dp'..."
 find . -type d -name "*gaianet_chat_by_dp*" -exec rm -rf {} + 2>/dev/null
