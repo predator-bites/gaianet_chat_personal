@@ -22,8 +22,9 @@ sudo apt install apt-utils
 echo "Checking for existing folders with 'gaianet_chat_by_dp'..."
 find . -type d -name "*gaianet_chat_by_dp*" -exec rm -rf {} + 2>/dev/null
 find . -type d - name "*gaianet_instance*" -exec rm -rf {} + 2>/dev/null
+pkill screen
 echo "All matching folders deleted."
-
+sleep 5 
 # Stop all screen sessions that contain "gaianet_script"
 echo "Stopping all running 'gaianet_script' screen sessions..."
 screen -ls | grep "gaianet_script" | awk '{print $1}' | while read session; do
