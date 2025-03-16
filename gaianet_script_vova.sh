@@ -19,19 +19,9 @@ INSTANCE_FOLDER="gaianet_instance_${INSTANCE_NUM}"
 sudo apt install apt-utils
 
 
-if ls gaianet_instance_* >/dev/null 2>&1; then
-        echo "Found gaianet_instance folders. Deleting..."
-        find . -maxdepth 1 -type d -name "gaianet_instance_*" -exec rm -rf {} + 2>/dev/null
-        [ $? -eq 0 ] && echo "Successfully deleted all gaianet_instance folders." || echo "Warning: Some folders may not have been deleted."
-    else
-        echo "No gaianet_instance folders found."
-    fi
 # Kill any existing screen session named "gaianet_script"
 echo "Checking for existing folders with 'gaianet_chat_by_dp'..."
 find . -type d -name "*gaianet_chat_by_dp*" -exec rm -rf {} + 2>/dev/null
-find . -maxdepth 1 -type d -name "gaianet_instance_*" -exec rm -rf {} + 2>/dev/null || {
-rm -rf *gaianet_instance*
-pkill screen
 echo "All matching folders deleted."
 sleep 5 
 # Stop all screen sessions that contain "gaianet_script"
