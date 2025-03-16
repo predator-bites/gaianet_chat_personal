@@ -12,24 +12,40 @@ API_KEY=$2
 THREADS_AMOUNT=$3
 INSTANCE_NUM=$4
 
-# Define folder name for the instance
+# Define folder name and screen name for the instance
 INSTANCE_FOLDER="gaianet_instance_${INSTANCE_NUM}"
+SCREEN_NAME="gaianet_chat_${INSTANCE_NUM}"
 
-sudo apt install apt-utils
+# Cleanup function for graceful shutdown
+cleanup() {
+    echo "Performing cleanup before exit..."
+    if screen -list | grep -q "$SCREEN_NAME"; then
+        echo "Terminating screen session: $SCREEN_NAME"
+        screen -X -S "$SCREEN_NAME" quit
+        sleep 1
+    fi
+    echo "Cleanup complete."
+}
 
+# Trap signals for cleanup on exit or interruption
+trap cleanup EXIT INT TERM
 
-# Kill any existing screen session named "gaianet_script"
+# Install initial dependency
+sudo apt install apt-utils -y
+
+# Initial cleanup
 echo "Checking for existing folders with 'gaianet_chat_by_dp'..."
 find . -type d -name "*gaianet_chat_by_dp*" -exec rm -rf {} + 2>/dev/null
 echo "All matching folders deleted."
-sleep 5 
+
 # Stop all screen sessions that contain "gaianet_script"
 echo "Stopping all running 'gaianet_script' screen sessions..."
-screen -ls | grep "gaianet_script" | awk '{print $1}' | while read session; do
+screen -ls | grep "gaianet_script" | awk '{print $1}' | while read -r session; do
     screen -X -S "$session" quit
 done
 echo "All matching screen sessions stopped."
-# Create the instance directory if it doesn't exist
+
+# Create the instance directory
 mkdir -p "$INSTANCE_FOLDER"
 
 # Define paths inside the instance folder
@@ -37,34 +53,31 @@ ACCOUNT_FILE="$INSTANCE_FOLDER/account.txt"
 MESSAGE_FILE="$INSTANCE_FOLDER/message.txt"
 BOT_FILE="$INSTANCE_FOLDER/bot.py"
 VENV_DIR="$INSTANCE_FOLDER/venv"
-SCREEN_NAME="gaianet_chat_${INSTANCE_NUM}"
 
 # Installing dependencies
-sudo apt install screen -y
-sudo apt install python3-venv -y 
-sudo apt install git -y
-sleep 3
+sudo apt install screen python3-venv git -y
+sleep 2
 
 # Kill the specific screen session if it exists
-screen -X -S $SCREEN_NAME quit 2>/dev/null
+screen -X -S "$SCREEN_NAME" quit 2>/dev/null
 
-# Create a virtual environment inside the instance folder
+# Create virtual environment and install Python package
 python3 -m venv "$VENV_DIR"
 source "$VENV_DIR/bin/activate"
 pip install cloudscraper
 
 # Create API key file
 if [ ! -f "$ACCOUNT_FILE" ]; then
-  echo "Creating account file..."
-  cat > "$ACCOUNT_FILE" <<EOF
+    echo "Creating account file..."
+    cat > "$ACCOUNT_FILE" <<EOF
 $API_KEY|https://$DOMAIN.gaia.domains/v1/chat/completions
 EOF
 fi
 
 # Create message file
 if [ ! -f "$MESSAGE_FILE" ]; then
-  echo "Creating message file..."
-  cat > "$MESSAGE_FILE" <<EOF
+    echo "Creating message file..."
+    cat > "$MESSAGE_FILE" <<'EOF'
 What is artificial intelligence?
 How does machine learning work?
 What is the difference between AI and machine learning?
@@ -495,8 +508,8 @@ fi
 
 # Create bot script inside the instance folder
 if [ ! -f "$BOT_FILE" ]; then
-  echo "Creating bot script..."
-  cat > "$BOT_FILE" <<EOF
+    echo "Creating bot script..."
+    cat > "$BOT_FILE" <<'EOF'
 import cloudscraper
 import json
 import random
@@ -541,23 +554,19 @@ scraper = cloudscraper.create_scraper()
 def send_request(message):
     while True:
         api_key, api_url = random.choice(api_accounts)
-
         headers = {
             'Authorization': f'Bearer {api_key}',
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         }
-
         data = {
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": message}
             ]
         }
-
         try:
             response = scraper.post(api_url, headers=headers, json=data)
-
             if response.status_code == 200:
                 try:
                     response_json = response.json()
@@ -569,7 +578,6 @@ def send_request(message):
             else:
                 print(f"⚠️ [ERROR] API: {api_url} | Status: {response.status_code} | Retrying in 2s...")
                 time.sleep(2)
-
         except Exception as e:
             print(f"❌ [REQUEST FAILED] API: {api_url} | Error: {e} | Retrying in 5s...")
             time.sleep(5)
@@ -591,6 +599,18 @@ for thread in threads:
 EOF
 fi
 
-sleep 5
+# Make bot script executable and start screen session
 chmod +x "$BOT_FILE"
+echo "Starting screen session: $SCREEN_NAME"
 screen -dmS "$SCREEN_NAME" bash -c "cd $INSTANCE_FOLDER && source venv/bin/activate && python3 bot.py $THREADS_AMOUNT"
+
+# Verify screen session started
+sleep 2
+if screen -list | grep -q "$SCREEN_NAME"; then
+    echo "Screen session $SCREEN_NAME started successfully."
+    echo "Script completed successfully on $(date)."
+    exit 0
+else
+    echo "Failed to start screen session $SCREEN_NAME."
+    exit 1
+fi
