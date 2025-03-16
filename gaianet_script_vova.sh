@@ -28,7 +28,7 @@ cleanup() {
 }
 
 # Trap signals for cleanup on exit or interruption
-trap cleanup EXIT INT TERM
+cleanup
 
 # Install initial dependency
 sudo apt install apt-utils -y
